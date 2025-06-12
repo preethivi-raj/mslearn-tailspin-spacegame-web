@@ -18,26 +18,37 @@ steps:
   displayName: 'Run npm install'
   inputs:
     verbose: false
+  continueOnError: false
 
-- script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'
+- script: |
+    if [ -f ./node_modules/.bin/node-sass ]; then
+      ./node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot
+    else
+      echo "node-sass not found!" && exit 1
   displayName: 'Compile Sass assets'
+  continueOnError: 'false'
 
 - task: gulp@1
   displayName: 'Run gulp tasks'
+  continueOnError: false
 
-- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+- script: |
+    echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt
   displayName: 'Write build info'
   workingDirectory: Tailspin.SpaceGame.Web/wwwroot
+  continueOnError: 'true'
 
 - task: DotNetCoreCLI@2
   displayName: 'Restore project dependencies'
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
+  continueOnError: false
 
 - task: DotNetCoreCLI@2
   displayName: 'Build the project - Release'
   inputs:
     command: 'build'
-    arguments: '--no-restore --configuration Release'
+    arguments: '--no-restore --configuration $(buildConfiguration)'
     projects: '**/*.csproj'
+  continueOnError: false
