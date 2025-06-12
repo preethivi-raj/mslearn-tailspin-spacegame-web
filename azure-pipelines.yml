@@ -8,67 +8,53 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+# Install build tools required for node-gyp
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y build-essential python3 g++ make
+  displayName: 'Install build tools for node-gyp'
+
+# Use a specific Node.js version
+- task: UseNode@1
+  inputs:
+    version: '20.x'
+  displayName: 'Use Node.js 20'
+
+# Install Node.js dependencies with legacy peer deps
+- script: npm install --legacy-peer-deps
+  displayName: 'Install Node.js dependencies'
+
+# Compile Sass assets
+- script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'
+  displayName: 'Compile Sass assets'
+
+# Run gulp tasks
+- task: gulp@1
+  displayName: 'Run gulp tasks'
+
+# Write build info
+- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+  displayName: 'Write build info'
+  workingDirectory: Tailspin.SpaceGame.Web/wwwroot
+
+# Use .NET SDK
 - task: UseDotNet@2
   displayName: 'Use .NET SDK 6.x'
   inputs:
     packageType: sdk
     version: '6.x'
 
-- task: Npm@1
-  displayName: 'Run npm install'
-  inputs:
-    verbose: false
-
-- script: './node_modules/.bin/node-sass Tailspin.SpaceGame.Web/wwwroot --output Tailspin.SpaceGame.Web/wwwroot'
-  displayName: 'Compile Sass assets'
-
-- task: gulp@1
-  displayName: 'Run gulp tasks'
-
-- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
-  displayName: 'Write build info'
-  workingDirectory: Tailspin.SpaceGame.Web/wwwroot
-
+# Restore .NET project dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore project dependencies'
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
 
+# Build the .NET project
 - task: DotNetCoreCLI@2
   displayName: 'Build the project - Release'
   inputs:
     command: 'build'
     arguments: '--no-restore --configuration Release'
     projects: '**/*.csproj'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # ASP.NET Core
-# # Build and test ASP.NET Core projects targeting .NET Core.
-# # Add steps that run tests, create a NuGet package, deploy, and more:
-# # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
-# trigger:
-# - main
-
-# pool:
-#   vmImage: ubuntu-latest
-
-# variables:
-#   buildConfiguration: 'Release'
-
-# steps:
-# - script: dotnet build --configuration $(buildConfiguration)
-#   displayName: 'dotnet build $(buildConfiguration)'
